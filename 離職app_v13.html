@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>離職護照 Exit Passport - 多面手聯名版</title>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Varela+Round&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --brand-color: #3B82F6; --brand-color-involuntary: #EF4444; --bg-color: #F8F5F2; }
+        body { font-family: 'Varela Round', 'Noto Sans TC', sans-serif; background-color: var(--bg-color); color: #4A4A4A; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .passport-card { background-image: linear-gradient(135deg, #fff 0%, #fff 100%); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+        input[type="date"] { -webkit-appearance: none; min-height: 50px; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate3d(0, 20px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out; }
+        .warning-box { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-left: 4px solid #F59E0B; }
+        .timeline-dot-voluntary { background-color: #3B82F6; }
+        .timeline-dot-involuntary { background-color: #EF4444; }
+        .timeline-border-voluntary { border-color: #3B82F6; }
+        .timeline-border-involuntary { border-color: #EF4444; }
+    </style>
+
+    <script>
+        tailwind.config = { theme: { extend: { colors: { brand: 'var(--brand-color)', brandinv: 'var(--brand-color-involuntary)', pagebg: 'var(--bg-color)' } } } }
+    </script>
+</head>
+<body>
+
+<div id="app" class="max-w-md mx-auto min-h-screen bg-pagebg relative pb-20 transition-colors duration-300">
+
+    <header class="p-6 pb-2 sticky top-0 bg-pagebg/95 backdrop-blur z-30 transition-colors duration-300">
+        <div class="flex items-center justify-between">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                🛫 離職護照
+                <a href="https://www.threads.com/@duo.man.show" target="_blank" class="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors">@duo.man.show</a>
+            </h1>
+            <button v-if="step > 1" @click="step--" class="text-sm text-gray-500 hover:text-brand transition-colors">← 修改資料</button>
+        </div>
+        <div class="h-1.5 w-full bg-gray-200 mt-4 rounded-full overflow-hidden"><div class="h-full transition-all duration-700 ease-out" :class="type === 'involuntary' ? 'bg-brandinv' : 'bg-brand'" :style="{ width: (step/3)*100 + '%' }"></div></div>
+    </header>
+
+    <main class="p-6">
+        <div v-if="step === 1" class="space-y-6 animate-fade-in-up">
+            <h2 class="text-2xl font-bold text-gray-800 leading-snug">準備啟程了嗎？<br><span class="text-base font-normal text-gray-500">選擇您的離職情境以建立護照</span></h2>
+            <button @click="selectType('voluntary')" class="w-full text-left p-6 bg-white rounded-2xl shadow-sm border-2 border-transparent hover:border-brand active:scale-[0.98] transition-all group">
+                <div class="flex justify-between items-start"><div><span class="text-xl font-bold text-gray-800 block mb-1">🕊️ 我想提離職</span><span class="text-xs text-brand font-bold bg-orange-50 px-2 py-0.5 rounded">自願離職</span></div><div class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-brand group-hover:text-white flex items-center justify-center transition-colors">➜</div></div>
+                <p class="mt-4 text-sm text-gray-500 leading-relaxed">依勞基法第15條、第16條計算預告期，並依第38條試算特休折現權益。</p>
+            </button>
+            <button @click="selectType('involuntary')" class="w-full text-left p-6 bg-white rounded-2xl shadow-sm border-2 border-transparent hover:border-red-500 active:scale-[0.98] transition-all group">
+                <div class="flex justify-between items-start"><div><span class="text-xl font-bold text-gray-800 block mb-1">💼 公司叫我走</span><span class="text-xs text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded">非自願 / 資遣</span></div><div class="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-red-500 group-hover:text-white flex items-center justify-center transition-colors">➜</div></div>
+                <p class="mt-4 text-sm text-gray-500 leading-relaxed">預估資遣費、謀職假規劃 (勞基法第16條)，與拒簽文件之防禦守則。</p>
+            </button>
+            <div class="text-center text-xs text-gray-400 mt-8">法規依據：<a href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=N0030001" target="_blank" class="underline hover:text-brand">勞動基準法 (民國 113 年 7 月 31 日修正版)</a></div>
+        </div>
+
+        <div v-if="step === 2" class="space-y-8 animate-fade-in-up">
+            <div class="flex items-center gap-4 p-4 rounded-xl border-l-4 shadow-sm bg-white" :class="type === 'voluntary' ? 'border-blue-500' : 'border-red-500'">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0" :class="type === 'voluntary' ? 'bg-blue-50' : 'bg-red-50'">{{ type === 'voluntary' ? '🕊️' : '💼' }}</div>
+                <div><p class="text-xs font-bold uppercase tracking-wider mb-0.5" :class="type === 'voluntary' ? 'text-blue-600' : 'text-red-600'">CURRENT SCENARIO</p><h2 class="text-xl font-bold text-gray-800">{{ type === 'voluntary' ? '我想提離職' : '公司叫我走' }}</h2></div>
+            </div>
+
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><div class="w-1 h-6 rounded-full" :class="type === 'voluntary' ? 'bg-brand' : 'bg-brandinv'"></div><h3 class="text-lg font-bold text-gray-800">關鍵日期</h3></div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">到職日期</label>
+                    <input type="date" v-model="onboardDate" @change="validateDates" class="w-full p-3 bg-gray-50 border-2 border-transparent focus:bg-white rounded-lg text-lg font-medium text-gray-800 outline-none transition-colors appearance-none" :class="type === 'voluntary' ? 'focus:border-brand' : 'focus:border-brandinv'">
+                </div>
+
+                <div v-if="type === 'voluntary'" class="bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-100 animate-fade-in-up">
+                    <label class="block text-xs font-bold text-brand uppercase tracking-wider mb-2">（預計）提離職日</label>
+                    <input type="date" v-model="voluntaryNoticeDate" @change="validateDates" class="w-full p-3 bg-white border-2 border-transparent focus:border-brand rounded-lg text-lg font-medium text-gray-800 outline-none transition-colors appearance-none">
+                </div>
+
+                <div v-if="type === 'involuntary'" class="bg-red-50 p-4 rounded-xl shadow-sm border border-red-100 animate-fade-in-up">
+                    <label class="block text-xs font-bold text-red-800 uppercase tracking-wider mb-2">公司哪一天通知你？</label>
+                    <input type="date" v-model="employerNoticeDate" @change="validateDates" class="w-full p-3 bg-white border-2 border-transparent focus:border-red-500 rounded-lg text-lg font-medium text-gray-800 outline-none transition-colors appearance-none">
+                    <p class="text-[10px] text-red-600 mt-2">*用來檢查是否符合法定預告期。若不足，公司需補發預告工資。</p>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{{ type === 'voluntary' ? '預計最後在職日' : '公司指定的離職日' }}</label>
+                    <input type="date" v-model="leaveDate" @change="validateDates" class="w-full p-3 bg-gray-50 border-2 border-transparent focus:bg-white rounded-lg text-lg font-medium text-gray-800 outline-none transition-colors appearance-none" :class="type === 'voluntary' ? 'focus:border-brand' : 'focus:border-brandinv'">
+
+                    <!-- 預告期檢核結果顯示 -->
+                    <div v-if="voluntaryNoticeCheck.status !== 'empty' && type === 'voluntary'" class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <div class="flex items-center justify-between mb-1"><span class="text-xs text-gray-500">法定應提前</span><span class="text-sm font-bold">{{ noticeDays }} 天</span></div>
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-500">您預計提前</span><span class="text-sm font-bold" :class="voluntaryNoticeCheck.isValid ? 'text-green-600' : 'text-orange-500'">{{ voluntaryNoticeCheck.actual }} 天</span></div>
+                        <div v-if="noticeDays === 0" class="flex items-center gap-2 text-xs text-green-600 font-bold"><span>✅</span> 年資未滿3個月，不需預告。</div>
+                        <div v-else-if="voluntaryNoticeCheck.isValid" class="flex items-center gap-2 text-xs text-green-600 font-bold"><span>✅</span> 符合勞基法第16條預告期。</div>
+                        <div v-else class="space-y-2">
+                            <div class="flex items-start gap-2 text-xs text-orange-600 font-bold"><span>⚠️</span> <span>預告期不足 (少 {{ noticeDays - voluntaryNoticeCheck.actual }} 天)<br>建議延後離職日或與公司協商。</span></div>
+                            <div v-if="noticeInvalidReason" class="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">{{ noticeInvalidReason }}</div>
+                        </div>
+                    </div>
+
+                    <!-- 非自願離職預告期檢核 -->
+                    <div v-if="type === 'involuntary' && employerNoticeDate && leaveDate" class="mt-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                        <div class="flex items-center justify-between mb-1"><span class="text-xs text-gray-500">法定應提前</span><span class="text-sm font-bold">{{ noticeDays }} 天</span></div>
+                        <div class="flex items-center justify-between mb-2"><span class="text-xs text-gray-500">公司實際提前</span><span class="text-sm font-bold" :class="noticeCalculation.shortfall === 0 ? 'text-green-600' : 'text-red-600'">{{ noticeCalculation.actual }} 天</span></div>
+                        <div v-if="noticeDays === 0" class="flex items-center gap-2 text-xs text-green-600 font-bold"><span>✅</span> 年資未滿3個月，不需預告期。</div>
+                        <div v-else-if="noticeCalculation.shortfall === 0" class="flex items-center gap-2 text-xs text-green-600 font-bold"><span>✅</span> 符合勞基法第16條預告期。</div>
+                        <div v-else class="flex items-start gap-2 text-xs text-red-600 font-bold"><span>⚠️</span> <span>預告期不足 {{ noticeCalculation.shortfall }} 天！<br>公司需補發預告期間工資 ${{ Math.round(noticeCalculation.pay).toLocaleString() }}</span></div>
+                    </div>
+                </div>
+
+                <div v-if="tenureDays > 0 && tenureDays < 90" class="warning-box p-3 rounded-lg text-sm">
+                    <div class="flex items-start gap-2"><span class="text-lg">⚠️</span><div><p class="font-bold text-amber-900">年資未滿 3 個月</p><p class="text-amber-800 text-xs mt-1">依勞基法第16條，未滿3個月者無需預告期。</p></div></div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2"><div class="w-1 h-6 rounded-full" :class="type === 'voluntary' ? 'bg-brand' : 'bg-brandinv'"></div><h3 class="text-lg font-bold text-gray-800">薪資計算</h3></div>
+                    <div class="text-xs flex bg-gray-200 rounded p-0.5"><button @click="salaryMode='simple'" :class="salaryMode==='simple'?'bg-white shadow text-gray-800':'text-gray-500'" class="px-2 py-1 rounded transition">概算</button><button @click="salaryMode='detail'" :class="salaryMode==='detail'?'bg-white shadow text-gray-800':'text-gray-500'" class="px-2 py-1 rounded transition">精算</button></div>
+                </div>
+                <div v-if="salaryMode === 'simple'">
+                    <div class="relative"><span class="absolute left-4 top-3.5 text-gray-400 font-bold">$</span><input type="number" v-model.number="avgSalaryInput" class="w-full p-3 pl-8 bg-white border border-gray-200 rounded-xl text-lg font-bold text-gray-800 placeholder-gray-300 outline-none" :class="type === 'voluntary' ? 'focus:border-brand' : 'focus:border-brandinv'" placeholder="月平均工資" min="0"></div>
+                    <p class="text-xs text-gray-500 mt-2">💡 請輸入「離職前 6 個月」的平均工資 (依勞基法第2條第4款)。</p>
+                </div>
+                <div v-else class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                    <p class="text-xs text-gray-500 mb-2">離職前 6 個月工資總額：</p>
+                    <div v-for="(m, i) in last6Months" :key="i" class="flex justify-between items-center border-b border-gray-50 pb-2"><span class="text-sm text-gray-600 font-medium w-24">{{ m.label }}</span><input type="number" v-model.number="m.amount" class="text-right w-32 bg-transparent outline-none font-bold text-gray-700 placeholder-gray-200" placeholder="金額" min="0"></div>
+                    <div class="flex justify-between items-center pt-2"><span class="text-xs text-gray-400">平均工資</span><span class="text-lg font-bold" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">${{ calculatedAvgSalary.toLocaleString() }}</span></div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><div class="w-1 h-6 rounded-full" :class="type === 'voluntary' ? 'bg-brand' : 'bg-brandinv'"></div><h3 class="text-lg font-bold text-gray-800">特休盤點</h3></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <div class="flex bg-gray-100 p-1 rounded-lg">
+                        <button @click="leaveSystem = 'anniversary'" :class="leaveSystem === 'anniversary' ? 'bg-white shadow' : 'text-gray-500'" class="flex-1 py-2 text-sm font-bold rounded-md transition-all" :style="leaveSystem === 'anniversary' ? (type === 'voluntary' ? 'color: var(--brand-color)' : 'color: var(--brand-color-involuntary)') : ''">週年制 (法定)</button>
+                        <button @click="leaveSystem = 'calendar'" :class="leaveSystem === 'calendar' ? 'bg-white shadow' : 'text-gray-500'" class="flex-1 py-2 text-sm font-bold rounded-md transition-all" :style="leaveSystem === 'calendar' ? (type === 'voluntary' ? 'color: var(--brand-color)' : 'color: var(--brand-color-involuntary)') : ''">曆年制 (公司)</button>
+                    </div>
+                    <div class="space-y-3 pb-4 border-b border-gray-100">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">1. 本年度特休 (Current)</h4>
+                        <div v-if="leaveSystem === 'anniversary'">
+                            <div class="flex justify-between items-start mb-2">
+                                <div><span class="text-gray-600 block text-sm">法定應給</span><span v-if="tenureDays > 0" class="text-[10px] text-gray-400 block mt-0.5">年資 {{ tenureText }} ({{ (Math.floor(tenure)).toFixed(0) }}年級距)</span></div>
+                                <span class="font-bold text-gray-800 text-lg">{{ currentYearLeaveEntitlement }} 天</span>
+                            </div>
+                            <div v-if="currentYearLeaveEntitlement > 0" class="bg-blue-50 p-2 rounded text-[10px] text-blue-600 mb-3 leading-relaxed">💡 您的年資已於 <strong>{{ new Date(onboardDate).toLocaleDateString().slice(5) }}</strong> 跨過新年度門檻，依週年制規定，您已取得完整 <strong>{{ currentYearLeaveEntitlement }}</strong> 天特休權利。</div>
+                            <div class="flex justify-between items-center"><label class="text-sm text-gray-600">已休天數</label><div class="flex items-center gap-2"><input type="number" step="0.1" v-model.number="usedLeave" class="w-20 p-2 text-right bg-gray-50 rounded border border-gray-200 outline-none" :class="type === 'voluntary' ? 'focus:border-brand' : 'focus:border-brandinv'" placeholder="0"><span class="text-sm text-gray-500">天</span></div></div>
+                        </div>
+                        <div v-else>
+                            <div class="p-2 bg-blue-50 text-blue-800 text-xs rounded mb-2 leading-relaxed">請輸入薪資單上<strong>屬於本年度</strong>的剩餘天數。<br>(若以小時計，請換算小數，如4小時=0.5天)</div>
+                            <div class="flex justify-between items-center"><label class="text-sm text-gray-600 font-bold">系統顯示剩餘</label><div class="flex items-center gap-2"><input type="number" step="0.1" v-model.number="manualRemainingLeave" class="w-20 p-2 text-right bg-white rounded border-2 font-bold outline-none" :class="type === 'voluntary' ? 'border-brand text-brand' : 'border-brandinv text-brandinv'" placeholder="0"><span class="text-sm text-gray-500">天</span></div></div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2"><input type="checkbox" id="hasDeferred" v-model="hasDeferredLeave" class="w-4 h-4 rounded" :class="type === 'voluntary' ? 'accent-brand' : 'accent-brandinv'"><label for="hasDeferred" class="text-sm text-gray-600 cursor-pointer">我有上年度遞延未休之天數</label></div>
+                        <div v-if="hasDeferredLeave" class="pt-2 pl-6 animate-fade-in-up">
+                            <div class="flex justify-between items-center"><label class="text-sm text-gray-600 font-bold" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">遞延剩餘天數</label><div class="flex items-center gap-2"><input type="number" step="0.1" v-model.number="deferredRemaining" class="w-20 p-2 text-right bg-gray-50 rounded border border-gray-200 outline-none" :class="type === 'voluntary' ? 'focus:border-brand' : 'focus:border-brandinv'" placeholder="0"><span class="text-sm text-gray-500">天</span></div></div>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-gray-100 flex justify-between items-center"><span class="text-sm font-bold text-gray-800">總計可折現</span><span class="text-xl font-bold" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">{{ totalRemainingLeave }} 天</span></div>
+                    <div class="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-center mb-1"><span class="text-xs text-gray-500">折現基準 (日薪)</span><span class="text-sm font-bold text-gray-700">${{ dailyRate.toLocaleString() }} / 天</span></div>
+                        <div class="flex justify-between items-center"><span class="text-xs text-gray-500">預估折現金額</span><span class="text-sm font-bold" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">${{ Math.round(leaveCash).toLocaleString() }}</span></div>
+                        <p class="text-[10px] text-gray-400 mt-2 text-right leading-tight">*註：此處以平均工資÷30估算。<br>依細則24-1條，應以「最近一個月工資」為準。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white p-4 rounded-xl border-2 border-gray-200">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" v-model="agreedDisclaimer" class="mt-1 w-5 h-5 rounded" :class="type === 'voluntary' ? 'accent-brand' : 'accent-brandinv'">
+                    <span class="text-xs text-gray-600 leading-relaxed">我已了解本工具僅為<strong>資訊整理與試算參考</strong>，非正式法律諮詢或官方核定結果。<a href="#disclaimer" @click.prevent="showDisclaimer = true" class="underline font-bold" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">查看完整免責聲明</a></span>
+                </label>
+            </section>
+            <button @click="goToResult" :disabled="!canGenerate" class="w-full py-4 mt-8 text-white rounded-xl font-bold text-lg shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none" :class="type === 'voluntary' ? 'bg-brand shadow-orange-100' : 'bg-brandinv shadow-red-100'">{{ canGenerate ? '生成離職護照 ✈️' : '請先閱讀並同意免責聲明' }}</button>
+        </div>
+
+        <div v-if="step === 3" class="space-y-6 pb-12 animate-fade-in-up">
+            <div class="passport-card bg-white rounded-2xl overflow-hidden border border-gray-100 relative">
+                <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><svg width="100" height="100" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
+                <div class="p-6 pb-0">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Passenger</p><p class="text-lg font-bold text-gray-800">自由的靈魂</p></div>
+                        <div class="text-right"><p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Destination</p><p class="text-lg font-bold" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">FREEDOM</p></div>
+                    </div>
+                    <div class="mt-6 grid grid-cols-2 gap-4">
+                        <div class="p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-400 mb-1">距離自由還有</p><p class="text-2xl font-bold text-gray-800">{{ daysUntilFreedom }} <span class="text-xs font-normal text-gray-500">天</span></p><p class="text-[10px] font-bold mt-1" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">含 {{ workingDaysLeft }} 個工作天</p></div>
+                        <div class="p-3 bg-gray-50 rounded-lg"><p class="text-xs text-gray-400 mb-1">預估權益總值</p><p class="text-2xl font-bold text-gray-800">${{ Math.round(totalMoney).toLocaleString() }}</p><p class="text-[10px] text-gray-500 mt-1">{{ type==='involuntary' ? '含資遣費、特休與預告工資' : '特休折現' }}</p></div>
+                    </div>
+                </div>
+                <div class="relative h-8 w-full my-2">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t-2 border-dashed border-gray-200"></div></div>
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-pagebg rounded-r-full"></div>
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-pagebg rounded-l-full"></div>
+                </div>
+                <div class="p-6 pt-0 space-y-6">
+                    <div v-if="noticeDays > 0" class="relative pl-8 border-l-2 pb-2" :class="type === 'voluntary' ? 'border-brand' : 'border-brandinv'">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white shadow-sm" :class="type === 'voluntary' ? 'bg-brand' : 'bg-brandinv'"></div>
+                        <p class="text-xs text-gray-400 font-bold uppercase">ACTION REQUIRED</p><p class="text-base font-bold text-gray-800">{{ noticeDateStr }} 前通知</p>
+                        <div class="text-xs text-gray-500 mt-1 leading-relaxed">年資 {{ tenureText }}，法定需提前 {{ noticeDays }} 天 (勞基法第16條第1項)。</div>
+                    </div>
+                    <div v-if="type === 'involuntary' && jobSearchLeaveDays > 0" class="relative pl-8 border-l-2 pb-2" :class="type === 'voluntary' ? 'border-brand' : 'border-brandinv'">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-sm"></div>
+                        <p class="text-xs text-gray-400 font-bold uppercase">PAID JOB SEARCH LEAVE</p><p class="text-base font-bold text-gray-800">預告期內可請 {{ jobSearchLeaveDays }} 天有薪謀職假</p>
+                        <div class="text-xs text-gray-500 mt-1 leading-relaxed">勞基法第16條第2項：每7天可請2天找工作，薪水照給。</div>
+                    </div>
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-gray-400 border-2 border-white"></div>
+                        <p class="text-xs text-gray-400 font-bold uppercase">LAST DAY</p><p class="text-base font-bold text-gray-800">{{ leaveDateStr }} (最後投保日)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="type === 'involuntary' && jobSearchSchedule.length > 0" class="bg-gradient-to-br from-pink-50 to-rose-50 p-5 rounded-2xl border-2 border-pink-200 shadow-lg">
+                <h4 class="font-bold text-pink-900 mb-4 flex items-center gap-2 text-lg">📅 謀職假行事曆<span class="text-[10px] bg-white text-pink-600 px-2 py-0.5 rounded border border-pink-300 font-bold">每7天可請2天</span></h4>
+                <div class="bg-white rounded-xl p-4 shadow-inner">
+                    <div class="grid grid-cols-7 gap-1 mb-3">
+                        <div v-for="day in ['日','一','二','三','四','五','六']" :key="day" class="text-center text-xs font-bold text-gray-400 py-1">{{ day }}</div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1">
+                        <div v-for="day in calendarDays" :key="day.date" class="aspect-square flex flex-col items-center justify-center text-xs rounded-lg transition-all" :class="day.isLeaveDay ? 'bg-gradient-to-br from-pink-400 to-rose-400 text-white font-bold shadow-md scale-105 relative' : day.isInRange ? 'bg-gray-100 text-gray-700' : 'text-gray-300'">
+                            <div class="flex flex-col items-center">
+                                <span v-if="day.showMonth" class="text-[8px] opacity-70 font-normal leading-tight">{{ day.month }}/</span>
+                                <span class="leading-tight">{{ day.day }}</span>
+                            </div>
+                            <span v-if="day.isLeaveDay" class="absolute -top-1 -right-1 text-[10px]">🎉</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-xs text-pink-700 bg-white/60 backdrop-blur p-3 rounded-lg">
+                    <span class="w-3 h-3 rounded bg-gradient-to-br from-pink-400 to-rose-400"></span>
+                    <span class="font-bold">粉紅色標記 = 可請有薪謀職假的日期</span>
+                </div>
+                <p class="text-[10px] text-pink-800 mt-3 text-center font-bold">*請假時請明確告知雇主是「謀職假」，薪資照給。</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">💰 權益明細<span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">僅供參考</span></h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-50"><span class="text-gray-600">特休未休折現</span><span class="font-bold text-gray-800">${{ Math.round(leaveCash).toLocaleString() }}</span></div>
+                    <div v-if="type === 'involuntary'" class="space-y-2">
+                        <div class="py-2 border-b border-gray-50">
+                            <div class="flex justify-between items-center mb-1"><span class="text-gray-600">新制資遣費 (2005/7後)</span><span class="font-bold text-gray-800">${{ Math.round(severanceNew.amount).toLocaleString() }}</span></div>
+                            <div v-if="severanceNew.amount > 0" class="bg-gray-50 p-2 rounded text-[10px] text-gray-500 leading-relaxed border border-gray-100">
+                                <span class="block font-bold mb-1">計算公式 (上限6個月)：</span>平均工資 ${{ calculatedAvgSalary.toLocaleString() }} × 0.5 (基數) × 年資 {{ (severanceNew.tenure).toFixed(2) }} 年
+                            </div>
+                        </div>
+                        <div class="py-2 border-b border-gray-50" v-if="severanceOld.amount > 0">
+                            <div class="flex justify-between items-center mb-1"><span class="text-gray-600">舊制資遣費 (2005/7前)</span><span class="font-bold text-gray-800">${{ Math.round(severanceOld.amount).toLocaleString() }}</span></div>
+                            <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-500 leading-relaxed border border-gray-100">
+                                <span class="block font-bold mb-1">計算公式：</span>平均工資 ${{ calculatedAvgSalary.toLocaleString() }} × 1.0 (基數) × 年資 {{ (severanceOld.tenure).toFixed(2) }} 年
+                            </div>
+                        </div>
+                        <div v-if="noticeCalculation.pay > 0" class="flex justify-between items-center py-2 border-b border-red-100 bg-red-50 px-2 -mx-2 rounded">
+                            <div class="flex flex-col"><span class="text-red-800 font-bold text-sm">預告工資 (補償)</span>
+                                <div class="bg-red-50/50 pt-1 mt-1 text-[10px] text-red-600">
+                                    <span class="font-bold">計算公式：</span>短缺 {{ noticeCalculation.shortfall }} 天 × 日薪 ${{ dailyRate.toLocaleString() }}
+                                    <br>
+                                    <a href="https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=N0030001&flno=16" target="_blank" class="underline text-red-500 hover:text-red-700">(依勞基法第16條第3項)</a>
+                                </div>
+                            </div>
+                            <span class="font-bold text-red-600">${{ Math.round(noticeCalculation.pay).toLocaleString() }}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-2"><span class="text-gray-800 font-bold">合計</span><span class="text-xl font-bold" :class="type === 'voluntary' ? 'text-brand' : 'text-brandinv'">${{ Math.round(totalMoney).toLocaleString() }}</span></div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 px-2"><h3 class="text-lg font-bold text-gray-800">🛡️ 多面手 x 權益自保指南</h3><span class="text-[10px] bg-gray-200 px-2 py-0.5 rounded text-gray-500">資訊整理非法律諮詢</span></div>
+                <div v-for="(item, index) in mergedStrategies" :key="index" :class="item.highlight ? 'bg-white border-red-200 shadow-red-50' : 'bg-white border-gray-200 shadow-sm'" class="rounded-xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
+                    <div class="p-3 pb-2 flex items-start gap-2 bg-gray-50/50">
+                        <div class="text-lg mt-0.5">{{ item.icon || '💡' }}</div>
+                        <div class="flex-1">
+                            <h4 :class="item.highlight ? 'text-red-800' : 'text-gray-800'" class="font-bold text-sm leading-tight">{{ item.title }}</h4>
+                            <p :class="item.highlight ? 'text-red-600' : (type === 'voluntary' ? 'text-brand' : 'text-brandinv')" class="text-xs mt-1.5 leading-relaxed">{{ item.concept }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <h4 class="font-bold text-gray-800 mb-3">📝 離職行動清單</h4>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3"><input type="checkbox" class="w-5 h-5 rounded" :class="type === 'voluntary' ? 'accent-brand' : 'accent-brandinv'"><span class="text-sm text-gray-700">寄出離職信</span></li>
+                    <li class="flex items-center gap-3"><input type="checkbox" class="w-5 h-5 rounded" :class="type === 'voluntary' ? 'accent-brand' : 'accent-brandinv'"><span class="text-sm text-gray-700">刪除電腦中私人登入資訊/瀏覽紀錄</span></li>
+                    <li class="flex items-center gap-3"><input type="checkbox" class="w-5 h-5 rounded" :class="type === 'voluntary' ? 'accent-brand' : 'accent-brandinv'"><span class="text-sm text-gray-700">確認特休結算 (勞基法第38條第4項)</span></li>
+                    <li v-if="type === 'involuntary'" class="flex items-center gap-3 bg-red-50 p-2 rounded -mx-2"><input type="checkbox" class="w-5 h-5 accent-red-500 rounded"><span class="text-sm text-red-700 font-bold">取得「非自願離職證明書」(勞基法第19條)</span></li>
+                    <li class="flex items-center gap-3"><input type="checkbox" class="w-5 h-5 rounded" :class="type === 'voluntary' ? 'accent-brand' : 'accent-brandinv'"><span class="text-sm text-gray-700">辦理勞健保轉出（6個月內需轉入）</span></li>
+                </ul>
+                <div v-if="type === 'voluntary'" class="mt-4 pt-3 border-t border-gray-50 text-center"><button @click="copyResignationLetter" class="text-xs text-gray-500 font-bold underline decoration-dotted hover:text-brand">📋 複製離職信範本</button></div>
+            </div>
+
+            <div class="bg-blue-50 p-5 rounded-2xl border border-blue-200 shadow-sm">
+                <h4 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    需要進一步協助？
+                </h4>
+                <div class="space-y-3">
+                    <a href="tel:1955" class="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 hover:bg-blue-100 transition-all active:scale-95">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">📞</div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-gray-800">勞工局諮詢專線</p>
+                            <p class="text-xs text-gray-600">1955 (免付費)</p>
+                        </div>
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                    <a href="https://www.laf.org.tw/" target="_blank" class="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 hover:bg-blue-100 transition-all active:scale-95">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">⚖️</div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-gray-800">法律扶助基金會</p>
+                            <p class="text-xs text-gray-600">符合資格可申請免費律師</p>
+                        </div>
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                    <a href="https://www.wda.gov.tw/" target="_blank" class="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 hover:bg-blue-100 transition-all active:scale-95">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">💼</div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-gray-800">就業服務站</p>
+                            <p class="text-xs text-gray-600">非自願離職可申請失業給付</p>
+                        </div>
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-5 shadow-lg">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="text-2xl">💭</div>
+                    <div class="flex-1">
+                        <p class="text-sm font-serif italic text-gray-700 leading-relaxed">"{{ quote }}"</p>
+                        <p class="text-[10px] text-gray-500 mt-2">— 多面手 Duo Man Show</p>
+                    </div>
+                </div>
+                <a href="https://www.threads.com/@duo.man.show" target="_blank" class="flex items-center justify-center gap-2 mt-4 py-2 px-4 bg-white border-2 border-amber-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-amber-100 transition-all active:scale-95">
+                    <svg class="w-4 h-4" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M141.537 88.988a66.667 66.667 0 0 0-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.023-10.816 21.334-10.816h.229c7.117 0 11.835 1.85 14.862 5.832 2.257 2.963 3.577 7.267 4.025 13.147a93.82 93.82 0 0 0-9.913-1.395c-19.725-2.013-32.077 7.616-32.077 25.013 0 8.212 3.127 14.957 9.054 19.524 5.323 4.098 12.388 6.177 20.42 6.177 10.158 0 18.852-3.554 25.134-10.28 5.091-5.458 8.312-12.799 9.587-21.815 4.845 3.084 8.618 7.266 10.958 12.255 3.015 6.433 4.015 14.918 3.06 25.933-1.131 13.04-5.639 23.088-13.4 29.861-7.243 6.32-17.107 9.531-29.315 9.531-15.961 0-27.353-5.967-34.815-18.243-6.789-11.167-10.232-27.297-10.232-47.936 0-20.64 3.443-36.77 10.232-47.936 7.462-12.276 18.854-18.243 34.815-18.243 15.135 0 26.215 5.14 33.885 15.717 6.554 9.034 10.33 21.491 11.238 37.027l14.954-1.397c-1.008-17.618-5.485-32.379-13.314-43.879C143.272 4.688 127.881 0 110.513 0c-20.626 0-36.198 7.484-47.664 22.88C51.917 38.923 48 57.492 48 80.002c0 22.511 3.917 41.08 11.849 56.122C71.315 151.52 86.887 159 107.513 159c15.597 0 28.566-4.18 38.57-12.43 10.507-8.66 16.593-21.334 18.094-37.683 1.234-13.435-.076-24.534-3.898-33.002-2.82-6.253-6.924-11.576-12.233-15.897Zm-31.285 45.763c-4.458 4.752-10.71 7.159-18.592 7.159-5.611 0-10.04-1.481-13.163-4.403-2.788-2.61-4.201-6.132-4.201-10.473 0-8.814 6.428-13.066 19.079-11.652 4.132.463 8.058 1.241 11.678 2.315.013 5.655-.75 11.82-3.801 17.054Z"></path></svg>
+                    <span>追蹤 @duo.man.show</span>
+                </a>
+            </div>
+
+            <footer id="disclaimer" class="mt-8 border-t-2 border-gray-300 pt-6 px-3 pb-6 bg-gray-50 rounded-xl">
+                <p class="text-xs text-gray-600 leading-relaxed text-justify">
+                    ⚠️ <strong class="text-gray-800">免責聲明</strong>：本工具僅依據《中華民國勞動基準法》之通案性規定進行試算與資訊整理，計算結果僅供參考，<strong>不代表官方核定金額或法律最終判斷</strong>。具體個案權益（如資遣費爭議、違法解僱認定、特休折現計算方式）可能因勞資雙方實際勞動契約約定、公司內部規章、或個案事實而有所不同。本工具並非法律諮詢服務，亦非律師或勞資顧問出具之專業意見。<br><br>
+                    若您面臨具體法律爭議、權益受損情況，強烈建議您：(1) 諮詢專業律師；(2) 向當地勞工局申請勞資爭議調解；(3) 聯繫法律扶助基金會尋求協助。<br><br>
+                    使用本工具所獲得之資訊，使用者應自行判斷其適用性。本工具開發者及「多面手」不承擔任何因使用本資訊而產生之直接、間接、衍生性損害或法律責任。
+                </p>
+            </footer>
+        </div>
+    </main>
+
+    <div v-if="showDisclaimer" @click="showDisclaimer = false" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in-up"><div @click.stop class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-6"><h3 class="text-xl font-bold text-gray-800 mb-4">完整免責聲明</h3><p class="text-sm text-gray-600 leading-relaxed mb-3">本工具僅供參考，實際權益請以主管機關核定為準。本工具不構成法律建議，若有爭議請諮詢專業律師。</p><button @click="showDisclaimer = false" class="mt-6 w-full py-3 text-white rounded-xl font-bold" :class="type === 'voluntary' ? 'bg-brand' : 'bg-brandinv'">我已了解</button></div></div>
+</div>
+
+<script>
+    const { createApp, ref, computed, watch } = Vue;
+
+    createApp({
+        setup() {
+            const step = ref(1);
+            const type = ref('voluntary');
+            const showDisclaimer = ref(false);
+            const agreedDisclaimer = ref(false);
+            const onboardDate = ref('');
+            const leaveDate = ref('');
+            const salaryMode = ref('simple');
+            const avgSalaryInput = ref(null);
+            const last6Months = ref([]);
+            const employerNoticeDate = ref('');
+            const voluntaryNoticeDate = ref('');
+            const leaveSystem = ref('anniversary');
+            const usedLeave = ref(0);
+            const manualRemainingLeave = ref(0);
+            const deferredRemaining = ref(0);
+            const hasDeferredLeave = ref(false);
+            const noticeInvalidReason = ref('');
+
+            const selectType = (t) => { type.value = t; step.value = 2; window.scrollTo(0,0); };
+            const copyText = (text) => { navigator.clipboard.writeText(text).then(() => alert('✅ 已複製到剪貼簿！')); };
+
+            // 日期驗證函數
+            const validateDates = () => {
+                noticeInvalidReason.value = '';
+
+                // 檢查到職日是否在離職日之後
+                if (onboardDate.value && leaveDate.value) {
+                    const onboard = new Date(onboardDate.value);
+                    const leave = new Date(leaveDate.value);
+
+                    if (onboard > leave) {
+                        noticeInvalidReason.value = '⚠️ 到職日期不能晚於離職日期，請重新輸入。';
+                        return false;
+                    }
+                }
+
+                // 自願離職：檢查提離職日
+                if (type.value === 'voluntary' && voluntaryNoticeDate.value && leaveDate.value) {
+                    const notice = new Date(voluntaryNoticeDate.value);
+                    const leave = new Date(leaveDate.value);
+                    const onboard = new Date(onboardDate.value);
+
+                    if (notice > leave) {
+                        noticeInvalidReason.value = '⚠️ 提離職日不能晚於最後在職日，請重新輸入。';
+                        return false;
+                    }
+
+                    if (notice < onboard) {
+                        noticeInvalidReason.value = '⚠️ 提離職日不能早於到職日，請重新輸入。';
+                        return false;
+                    }
+                }
+
+                // 非自願離職：檢查公司通知日
+                if (type.value === 'involuntary' && employerNoticeDate.value && leaveDate.value) {
+                    const notice = new Date(employerNoticeDate.value);
+                    const leave = new Date(leaveDate.value);
+                    const onboard = new Date(onboardDate.value);
+
+                    if (notice > leave) {
+                        noticeInvalidReason.value = '⚠️ 公司通知日不能晚於離職日，請重新輸入。';
+                        return false;
+                    }
+
+                    if (notice < onboard) {
+                        noticeInvalidReason.value = '⚠️ 公司通知日不能早於到職日，請重新輸入。';
+                        return false;
+                    }
+                }
+
+                return true;
+            };
+
+            watch(leaveDate, (newVal) => {
+                validateDates();
+                if (newVal) {
+                    const d = new Date(newVal);
+                    const months = [];
+                    for (let i = 1; i <= 6; i++) {
+                        const monthDate = new Date(d);
+                        monthDate.setMonth(monthDate.getMonth() - i);
+                        months.unshift({ label: `${monthDate.getFullYear()}/${String(monthDate.getMonth()+1).padStart(2,'0')}`, amount: null });
+                    }
+                    last6Months.value = months;
+                }
+            });
+
+            watch(onboardDate, () => validateDates());
+            watch(voluntaryNoticeDate, () => validateDates());
+            watch(employerNoticeDate, () => validateDates());
+
+            // 年資與預告期
+            const tenureDays = computed(() => {
+                if (!onboardDate.value || !leaveDate.value) return 0;
+                const days = Math.floor((new Date(leaveDate.value) - new Date(onboardDate.value)) / (1000 * 60 * 60 * 24));
+                return days >= 0 ? days : 0;
+            });
+            const tenure = computed(() => tenureDays.value / 365.25);
+            const tenureText = computed(() => {
+                if (!onboardDate.value || !leaveDate.value) return '';
+                const start = new Date(onboardDate.value);
+                const end = new Date(leaveDate.value);
+                let y = end.getFullYear() - start.getFullYear();
+                let m = end.getMonth() - start.getMonth();
+                let d = end.getDate() - start.getDate();
+                if (d < 0) { m--; const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0); d += prevMonth.getDate(); }
+                if (m < 0) { y--; m += 12; }
+                return `${y}年${m}個月`;
+            });
+            const noticeDays = computed(() => {
+                const days = tenureDays.value;
+                if (days < 90) return 0;
+                if (days < 365) return 10;
+                if (days < 1095) return 20;
+                return 30;
+            });
+            const noticeDateStr = computed(() => {
+                if (!leaveDate.value) return '';
+                const d = new Date(leaveDate.value);
+                d.setDate(d.getDate() - noticeDays.value - 1);
+                return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+            });
+            const leaveDateStr = computed(() => {
+                if (!leaveDate.value) return '';
+                const d = new Date(leaveDate.value);
+                return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+            });
+
+            // 修正後的日曆視圖計算 (加上月份標註)
+            const calendarDays = computed(() => {
+                if (!employerNoticeDate.value || !leaveDate.value) return [];
+
+                const noticeDate = new Date(employerNoticeDate.value);
+                const lastDay = new Date(leaveDate.value);
+
+                const noticeStart = new Date(noticeDate);
+                noticeStart.setDate(noticeStart.getDate() + 1);
+
+                const calStart = new Date(noticeStart);
+                calStart.setDate(1);
+
+                const firstDayOfWeek = calStart.getDay();
+                const adjustedStart = new Date(calStart);
+                adjustedStart.setDate(adjustedStart.getDate() - firstDayOfWeek);
+
+                const leaveDays = new Set();
+                let currentPeriodStart = new Date(noticeStart);
+
+                while (currentPeriodStart <= lastDay) {
+                    const periodEnd = new Date(currentPeriodStart);
+                    periodEnd.setDate(periodEnd.getDate() + 6);
+
+                    const actualPeriodEnd = periodEnd > lastDay ? lastDay : periodEnd;
+                    const periodDays = Math.floor((actualPeriodEnd - currentPeriodStart) / (1000 * 60 * 60 * 24)) + 1;
+                    const allowedLeaveDays = periodDays === 1 ? 1 : 2;
+
+                    let markedDays = 0;
+                    for (let i = 0; i < periodDays && markedDays < allowedLeaveDays; i++) {
+                        const checkDay = new Date(currentPeriodStart);
+                        checkDay.setDate(checkDay.getDate() + i);
+                        const dayOfWeek = checkDay.getDay();
+
+                        if ((dayOfWeek === 3 || dayOfWeek === 5) && markedDays < allowedLeaveDays) {
+                            leaveDays.add(checkDay.toDateString());
+                            markedDays++;
+                        }
+                    }
+
+                    if (markedDays < allowedLeaveDays) {
+                        for (let i = 0; i < periodDays && markedDays < allowedLeaveDays; i++) {
+                            const checkDay = new Date(currentPeriodStart);
+                            checkDay.setDate(checkDay.getDate() + i);
+                            const dayOfWeek = checkDay.getDay();
+
+                            if (dayOfWeek !== 0 && dayOfWeek !== 6 && !leaveDays.has(checkDay.toDateString())) {
+                                leaveDays.add(checkDay.toDateString());
+                                markedDays++;
+                            }
+                        }
+                    }
+
+                    currentPeriodStart.setDate(currentPeriodStart.getDate() + 7);
+                }
+
+                const days = [];
+                let current = new Date(adjustedStart);
+                let lastMonth = -1;
+                const maxDays = 42;
+
+                for (let i = 0; i < maxDays; i++) {
+                    const dateStr = current.toDateString();
+                    const isInRange = current >= noticeStart && current <= lastDay;
+                    const isLeaveDay = leaveDays.has(dateStr) && isInRange;
+                    const currentMonth = current.getMonth() + 1;
+
+                    // 在每個新月份的第一次出現時，或是每週的第一天（日）時顯示月份
+                    const showMonth = (currentMonth !== lastMonth) || (current.getDay() === 0 && current.getDate() <= 7);
+
+                    if (currentMonth !== lastMonth) lastMonth = currentMonth;
+
+                    days.push({
+                        date: dateStr,
+                        day: current.getDate(),
+                        month: currentMonth,
+                        showMonth: showMonth,
+                        isInRange: isInRange,
+                        isLeaveDay: isLeaveDay
+                    });
+
+                    current.setDate(current.getDate() + 1);
+
+                    if (current > lastDay && (current - lastDay) / (1000 * 60 * 60 * 24) > 7) break;
+                }
+
+                return days;
+            });
+
+            // 自願離職預告檢核
+            const voluntaryNoticeCheck = computed(() => {
+                if (type.value !== 'voluntary' || !voluntaryNoticeDate.value || !leaveDate.value) return { status: 'empty', actual: 0, isValid: false };
+                const start = new Date(voluntaryNoticeDate.value);
+                const end = new Date(leaveDate.value);
+                const actual = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+                return { status: 'filled', actual: actual >= 0 ? actual : 0, isValid: actual >= noticeDays.value };
+            });
+
+            // 薪資計算
+            const calculatedAvgSalary = computed(() => {
+                if (salaryMode.value === 'simple') return avgSalaryInput.value || 0;
+                const total = last6Months.value.reduce((sum, m) => sum + (m.amount||0), 0);
+                return Math.round(total / 6);
+            });
+            const dailyRate = computed(() => calculatedAvgSalary.value ? Math.round(calculatedAvgSalary.value / 30) : 0);
+
+            // 特休計算
+            const getAnnualLeaveByYears = (years) => {
+                if (years < 0.5) return 0;
+                if (years < 1) return 3;
+                if (years < 2) return 7;
+                if (years < 3) return 10;
+                if (years < 5) return 14;
+                if (years < 10) return 15;
+                return Math.min(30, 15 + Math.floor(years - 9));
+            };
+            const currentYearLeaveEntitlement = computed(() => onboardDate.value && leaveDate.value ? getAnnualLeaveByYears(tenure.value) : 0);
+            const totalRemainingLeave = computed(() => {
+                let current = leaveSystem.value === 'calendar' ? (manualRemainingLeave.value||0) : Math.max(0, currentYearLeaveEntitlement.value - (usedLeave.value||0));
+                return current + (hasDeferredLeave.value ? (deferredRemaining.value||0) : 0);
+            });
+            const leaveCash = computed(() => totalRemainingLeave.value * dailyRate.value);
+
+            // 資遣費計算
+            const severanceNew = computed(() => {
+                if (type.value !== 'involuntary' || !onboardDate.value || !leaveDate.value) return { amount: 0, tenure: 0 };
+                const newSysStart = new Date('2005-07-01');
+                const onboard = new Date(onboardDate.value);
+                const leave = new Date(leaveDate.value);
+                const actualStart = onboard > newSysStart ? onboard : newSysStart;
+                if (leave < actualStart) return { amount: 0, tenure: 0 };
+                const tenureYears = (leave - actualStart) / (1000 * 60 * 60 * 24 * 365.25);
+                const payMonths = Math.min(tenureYears * 0.5, 6);
+                return { amount: payMonths * calculatedAvgSalary.value, tenure: tenureYears };
+            });
+
+            const severanceOld = computed(() => {
+                if (type.value !== 'involuntary' || !onboardDate.value) return { amount: 0, tenure: 0 };
+                const onboard = new Date(onboardDate.value);
+                const newSysStart = new Date('2005-07-01');
+                if (onboard >= newSysStart) return { amount: 0, tenure: 0 };
+                const endOld = new Date('2005-06-30');
+                const actualEnd = new Date(leaveDate.value) < endOld ? new Date(leaveDate.value) : endOld;
+                let years = actualEnd.getFullYear() - onboard.getFullYear();
+                let months = actualEnd.getMonth() - onboard.getMonth();
+                let days = actualEnd.getDate() - onboard.getDate();
+                if (days < 0) months--;
+                if (months < 0) { years--; months += 12; }
+                if (days > 0) months++;
+                if (months === 12) { years++; months = 0; }
+                const tenureYears = years + (months / 12);
+                const payMonths = tenureYears * 1;
+                return { amount: payMonths * calculatedAvgSalary.value, tenure: tenureYears };
+            });
+
+            // 預告工資
+            const noticeCalculation = computed(() => {
+                if (type.value !== 'involuntary' || !employerNoticeDate.value || !leaveDate.value) return { actual: 0, shortfall: 0, pay: 0 };
+
+                const noticeStart = new Date(employerNoticeDate.value);
+                noticeStart.setDate(noticeStart.getDate() + 1);
+
+                const lastDay = new Date(leaveDate.value);
+                const actualDays = Math.floor((lastDay - noticeStart) / (1000 * 60 * 60 * 24)) + 1;
+                const shortfall = Math.max(0, noticeDays.value - actualDays);
+
+                return { actual: actualDays >= 0 ? actualDays : 0, shortfall, pay: shortfall * dailyRate.value };
+            });
+
+            const totalMoney = computed(() => {
+                let total = leaveCash.value;
+                if (type.value === 'involuntary') total += severanceNew.value.amount + severanceOld.value.amount + noticeCalculation.value.pay;
+                return total;
+            });
+
+            // 謀職假
+            const daysUntilFreedom = computed(() => leaveDate.value ? Math.max(0, Math.ceil((new Date(leaveDate.value) - new Date()) / (1000*60*60*24))) : 0);
+            const workingDaysLeft = computed(() => {
+                if(!leaveDate.value) return 0;
+                let c=0, cur=new Date(), end=new Date(leaveDate.value);
+                while(cur<=end){ if(cur.getDay()!==0 && cur.getDay()!==6) c++; cur.setDate(cur.getDate()+1); }
+                return c;
+            });
+
+            const jobSearchLeaveDays = computed(() => {
+                if (type.value !== 'involuntary' || !employerNoticeDate.value || !leaveDate.value) return 0;
+
+                const noticeStart = new Date(employerNoticeDate.value);
+                noticeStart.setDate(noticeStart.getDate() + 1);
+                const lastDay = new Date(leaveDate.value);
+
+                const noticePeriodDays = Math.floor((lastDay - noticeStart) / (1000 * 60 * 60 * 24)) + 1;
+
+                if (noticePeriodDays <= 0) return 0;
+
+                const fullWeeks = Math.floor(noticePeriodDays / 7);
+                const remainingDays = noticePeriodDays % 7;
+
+                let totalLeaveDays = fullWeeks * 2;
+
+                if (remainingDays === 1) {
+                    totalLeaveDays += 1;
+                } else if (remainingDays > 1) {
+                    totalLeaveDays += 2;
+                }
+
+                return totalLeaveDays;
+            });
+
+            const jobSearchSchedule = computed(() => {
+                if(!employerNoticeDate.value || !leaveDate.value) return [];
+                const w=[], end=new Date(leaveDate.value);
+                let cur=new Date(employerNoticeDate.value); cur.setDate(cur.getDate()+1);
+                let idx=1;
+                while(cur<=end) {
+                    let we=new Date(cur); we.setDate(we.getDate()+6); if(we>end) we=new Date(end);
+                    w.push({id:idx++, start:new Date(cur), end:new Date(we)});
+                    cur.setDate(cur.setDate()+7);
+                }
+                return w;
+            });
+
+            // 權益自保指南 (已移除 script 欄位)
+            const mergedStrategies = computed(() => {
+                const strategies = [];
+                if (type.value === 'involuntary') {
+                    strategies.push({
+                        title: '絕對防禦：拒簽「自願離職」',
+                        icon: '🛑',
+                        highlight: true,
+                        concept: '簽了就是自己挖坑埋自己。失業給付？掰。資遣費？掰。還要被HR記上一筆「態度不佳」。這張紙比鬼畫符還毒，千萬別碰。'
+                    });
+                    strategies.push({
+                        title: '蒐證自保：錄音是你的隱形保鑣',
+                        icon: '📢',
+                        highlight: false,
+                        concept: '只要你是對話參與者，錄音就合法（刑法第315條之1反面解釋）。口說無憑，紀錄才是鐵證。HR說什麼都要留存，LINE截圖、Email全部備份到私人信箱。'
+                    });
+                    strategies.push({
+                        title: '權益盤點：分手費與有薪假',
+                        icon: '💰',
+                        highlight: false,
+                        concept: '資遣費是法律規定的「分手費」，不是老闆心情好才給的紅包。謀職假是你的「帶薪找工時」(勞基法第16條第2項)，每7天可請2天薪水照領，不是請假扣錢。'
+                    });
+                    strategies.push({
+                        title: '失業給付：你繳的保費該拿回來了',
+                        icon: '💵',
+                        highlight: false,
+                        concept: '非自願離職才能領失業給付（最高領6個月）。公司想凹你簽自願離職？叫他先看就業保險法第11條，這權益是你繳保費換來的，不是施捨。'
+                    });
+                } else {
+                    strategies.push({
+                        title: '交接清單：你的職場免死金牌',
+                        icon: '🛡️',
+                        highlight: false,
+                        concept: '白紙黑字寫清楚，比口頭承諾更重要。這是避免離職後被「甩鍋」的唯一護身符。交接完請主管簽名確認，否則三個月後跳出來說你沒交接，你連證據都拿不出來。'
+                    });
+                    strategies.push({
+                        title: '特休權益：沒休完就是錢',
+                        icon: '🏖️',
+                        highlight: false,
+                        concept: '特休不是老闆的施捨，是你用血汗換來的權利（勞基法第38條）。想凹你放棄？叫他先看第38條第4項，上面寫得清清楚楚：雇主「應」發給工資。不是「可以」，是「應」。'
+                    });
+                    strategies.push({
+                        title: '預告期攻防：想趕我走？請付錢',
+                        icon: '⏳',
+                        highlight: false,
+                        concept: '預告期是給公司找人的時間，不是給你做功德的。公司不想讓你待滿？可以，請付「預告工資」請你走（勞基法第16條第3項）。不付錢就想趕人？當我塑膠？'
+                    });
+                }
+                return strategies;
+            });
+
+            // 多面手金句題庫
+            const quote = computed(() => {
+                const voluntaryQuotes = [
+                    "離職不是背叛，只是一次商業契約的終止。不需要對公司感到愧疚，你用勞力換取薪資，這是一場公平的交易。",
+                    "公司沒有你不會倒，但你的健康倒了，公司不會養你。懂得停損，才是最高級的自律。",
+                    "多面手的能力，值得更好的舞台。你的價值，不該被一家公司定義；你的未來，不該被一張辦公桌困住。",
+                    "好的離職，是給未來的自己最好的禮物。把該拿的權益拿走，優雅轉身，不留遺憾。",
+                    "面試是雙向的選擇，你在求職，也在面試這家公司值不值得你賣命。既然不值得，就大膽按下暫停鍵。",
+                    "不要為了不值得的人事物，委屈了自己的才華。你的善良，必須有點鋒芒；你的離開，是為了遇見光。"
+                ];
+                const involuntaryQuotes = [
+                    "資遣費是法律規定的『分手費』，不是老闆心情好才給的紅包。拿好拿滿，這是你應得的尊嚴。",
+                    "被資遣不代表你不行，只是這間公司的格局裝不下現在的你。謝謝公司給你『有薪謀職假』去找更好的工作。",
+                    "只要你沒點頭，沒人能逼你簽『自願離職』。守住底線，就是守住你的失業給付與未來。",
+                    "職場如戰場，沒有永遠的朋友。保護好自己，比討好老闆更重要。留存證據，讓法律成為你的後盾。",
+                    "這不是失敗，而是轉機。把危機變成轉機，是多面手的本能。拿著公司的錢去進修，把自己打磨得更亮。",
+                    "不要懷疑自己，商業決策有時候就是這麼殘酷。擦乾眼淚，確認戶頭裡的錢一分不少，然後昂首離開。"
+                ];
+                const list = type.value === 'voluntary' ? voluntaryQuotes : involuntaryQuotes;
+                return list[Math.floor(Math.random() * list.length)];
+            });
+
+            const isValidInput = computed(() => {
+                return onboardDate.value &&
+                       leaveDate.value &&
+                       calculatedAvgSalary.value > 0 &&
+                       !noticeInvalidReason.value;
+            });
+            const canGenerate = computed(() => isValidInput.value && agreedDisclaimer.value);
+
+            const copyResignationLetter = () => {
+                const formatDate = (dateStr) => {
+                    if (!dateStr) return '[日期]';
+                    const d = new Date(dateStr);
+                    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+                };
+
+                const voluntaryLetter = `敬啟者：
+
+本人因個人職涯規劃，擬於 ${formatDate(leaveDate.value)} 終止勞動契約（勞基法第15條、第16條）。
+
+依勞基法第38條第4項，本人尚有特休假 ${totalRemainingLeave.value} 天未休，請公司依法折算工資。
+
+感謝公司期間之栽培與照顧。
+
+此致
+[公司名稱]
+
+                                ${formatDate(new Date().toISOString().split('T')[0])}
+                                [您的姓名]`;
+
+                copyText(voluntaryLetter);
+            };
+
+            const goToResult = () => {
+                if (!validateDates()) {
+                    alert('請檢查日期設定是否正確');
+                    return;
+                }
+                step.value = 3;
+                window.scrollTo(0,0);
+            };
+
+            return {
+                step, type, selectType, showDisclaimer, agreedDisclaimer,
+                onboardDate, leaveDate, salaryMode, avgSalaryInput, last6Months, employerNoticeDate, voluntaryNoticeDate,
+                leaveSystem, usedLeave, manualRemainingLeave, deferredRemaining, hasDeferredLeave,
+                tenureDays, tenureText, calculatedAvgSalary, currentYearLeaveEntitlement, totalRemainingLeave,
+                noticeDays, noticeDateStr, leaveDateStr, voluntaryNoticeCheck,
+                daysUntilFreedom, workingDaysLeft,
+                leaveCash, severanceNew, severanceOld, jobSearchLeaveDays,
+                noticeCalculation, totalMoney, jobSearchSchedule, calendarDays,
+                isValidInput, canGenerate, mergedStrategies, quote, copyResignationLetter, goToResult,
+                dailyRate, validateDates, noticeInvalidReason
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
